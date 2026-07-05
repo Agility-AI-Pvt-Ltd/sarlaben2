@@ -20,3 +20,6 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     cattle = relationship(
         "Cattle", back_populates="farmer", cascade="all, delete-orphan"
     )
+    push_tokens = relationship(
+        "PushToken", back_populates="farmer", cascade="all, delete-orphan"
+    )
