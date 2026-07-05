@@ -13,6 +13,7 @@ from app.repositories.session_repository import SessionRepository
 from app.schemas.chat import AIMessageCreate, CattleMemoryCreate, ChatMessageCreate
 from app.schemas.session import SessionCreate
 from app.services.cattle_context_tool import CattleContextTool
+from app.services.notification_service import NotificationService
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class ChatService:
         self.session_repo = SessionRepository(db)
         self.memory_repo = MemoryRepository(db)
         self.cattle_context_tool = CattleContextTool(db)
+        self.notification_service = NotificationService(db)
         self.llm = LLMChatService()
 
     async def add_human_message(
@@ -111,6 +113,15 @@ class ChatService:
                     confidence=memory.confidence,
                 ),
             )
+        try:
+            await self.notification_service.send_message_notification(
+                farmer_id=farmer_id,
+                cattle_id=cattle_id,
+                cattle_name=cattle_context.profile.name,
+                message=ai_message.message,
+            )
+        except Exception:
+            logger.warning("Failed to send message push notification", exc_info=True)
         return ai_message
 
     async def list_messages(self, session_id: UUID):

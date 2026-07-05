@@ -13,6 +13,7 @@ from app.services.chat_service import ChatService
 @dataclass(frozen=True)
 class FakeProfile:
     text: str
+    name: str = "Lakshmi"
 
     def to_prompt(self) -> str:
         return self.text
@@ -23,7 +24,7 @@ async def test_add_ai_message_uses_ten_recent_messages_and_all_cattle_history() 
     cattle_id = uuid4()
     farmer_id = uuid4()
     session_id = uuid4()
-    created_message = object()
+    created_message = SimpleNamespace(message="Keep monitoring.")
 
     service = object.__new__(ChatService)
     service._resolve_session_id = AsyncMock(return_value=session_id)
@@ -32,6 +33,9 @@ async def test_add_ai_message_uses_ten_recent_messages_and_all_cattle_history() 
     )
     service.memory_repo = SimpleNamespace(
         create=AsyncMock(),
+    )
+    service.notification_service = SimpleNamespace(
+        send_message_notification=AsyncMock(),
     )
     latest_human = SimpleNamespace(id=uuid4(), message_type="human", message="Older chat")
     cattle_context = SimpleNamespace(
@@ -92,3 +96,9 @@ async def test_add_ai_message_uses_ten_recent_messages_and_all_cattle_history() 
     assert saved_memory.cattle_data_text == "Lakshmi had a fever last week."
     assert saved_memory.data_type_stored_by_ai is CattleMemoryType.MEDICAL
     assert saved_memory.source_message_id == latest_human.id
+    service.notification_service.send_message_notification.assert_awaited_once_with(
+        farmer_id=farmer_id,
+        cattle_id=cattle_id,
+        cattle_name="Lakshmi",
+        message="Keep monitoring.",
+    )
