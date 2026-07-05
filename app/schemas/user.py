@@ -39,6 +39,18 @@ class UserRead(Timestamped):
     is_active: bool
 
 
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, max_length=120)
+
+    @field_validator("full_name")
+    @classmethod
+    def clean_full_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
 class OTPRequest(BaseModel):
     phone_number: E164PhoneNumber
 

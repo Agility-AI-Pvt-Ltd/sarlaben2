@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import InvalidVerificationCodeError
+from app.core.exceptions import InvalidVerificationCodeError, NotFoundError
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import OTPRequest, OTPVerifyRequest, UserCreate
+from app.schemas.user import OTPRequest, OTPVerifyRequest, UserCreate, UserUpdate
 from app.services.twilio_verify_service import TwilioVerifyService
 
 
@@ -32,3 +34,9 @@ class AuthService:
         if user is None:
             return await self.user_repo.create_verified(user_data)
         return await self.user_repo.mark_verified(user, user_data)
+
+    async def update_user(self, user_id: UUID, data: UserUpdate):
+        user = await self.user_repo.get(user_id)
+        if user is None:
+            raise NotFoundError("User not found")
+        return await self.user_repo.update(user, data)

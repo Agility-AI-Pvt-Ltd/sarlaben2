@@ -1,9 +1,11 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
-from app.schemas.user import OTPVerifyRequest
+from app.core.exceptions import NotFoundError
+from app.schemas.user import OTPVerifyRequest, UserUpdate
 from app.services.auth_service import AuthService
 
 
@@ -31,3 +33,32 @@ async def test_verify_otp_creates_verified_user() -> None:
     assert created_data.phone_number == "+919876543210"
     assert created_data.full_name == "Ravi"
     assert created_data.preferred_language == "ta-IN"
+
+
+@pytest.mark.asyncio
+async def test_update_user_updates_existing_user() -> None:
+    user_id = uuid4()
+    existing_user = object()
+    updated_user = object()
+    service = object.__new__(AuthService)
+    service.user_repo = SimpleNamespace(
+        get=AsyncMock(return_value=existing_user),
+        update=AsyncMock(return_value=updated_user),
+    )
+    payload = UserUpdate(full_name="  Ravi Kumar  ")
+
+    result = await service.update_user(user_id, payload)
+
+    assert result is updated_user
+    service.user_repo.get.assert_awaited_once_with(user_id)
+    service.user_repo.update.assert_awaited_once_with(existing_user, payload)
+    assert payload.full_name == "Ravi Kumar"
+
+
+@pytest.mark.asyncio
+async def test_update_user_raises_for_missing_user() -> None:
+    service = object.__new__(AuthService)
+    service.user_repo = SimpleNamespace(get=AsyncMock(return_value=None))
+
+    with pytest.raises(NotFoundError):
+        await service.update_user(uuid4(), UserUpdate(full_name="Ravi"))
