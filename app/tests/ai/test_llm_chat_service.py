@@ -97,7 +97,7 @@ async def test_generate_cattle_reply_uses_responses_api() -> None:
     )
     assert "Hindi written in Devanagari" in responses.request["instructions"]
     assert "Do not write full English sentences" in responses.request["instructions"]
-    assert "AI, app, phone, call, audio, chat" in responses.request["instructions"]
+    assert "doctor, vet, medicine, injection, feed, vaccine" in responses.request["instructions"]
     assert "Hindi language rule" in responses.request["input"]
     assert events == ["analyze", "answer"]
     query_analyzer.analyze.assert_awaited_once_with(
