@@ -7,7 +7,7 @@ class MemoryClassifier:
         if any(
             word in lowered for word in ("fever", "sick", "health", "vet", "injury")
         ):
-            return CattleMemoryType.HEALTH
+            return CattleMemoryType.MEDICAL
         if any(word in lowered for word in ("feed", "fodder", "water", "grass")):
             return CattleMemoryType.FEEDING
         if any(word in lowered for word in ("milk", "yield", "litre", "liter")):

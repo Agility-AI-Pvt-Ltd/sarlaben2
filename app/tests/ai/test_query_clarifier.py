@@ -52,6 +52,7 @@ async def test_query_analyzer_forces_strict_analysis_tool_call() -> None:
         client=client,
         model="gpt-5.5",
         latest_user_message="Yes",
+        cattle_profile="Name: Lakshmi\nTag number: TN-01",
         conversation_context=(
             "ai: Should you monitor her water intake for the next hour?\nhuman: Yes"
         ),
@@ -66,6 +67,8 @@ async def test_query_analyzer_forces_strict_analysis_tool_call() -> None:
         "name": "analyze_cattle_query",
     }
     assert responses.request["parallel_tool_calls"] is False
+    assert "Name: Lakshmi" in responses.request["input"]
+    assert "Tag number: TN-01" in responses.request["input"]
     assert "Reduced water intake today." in responses.request["input"]
     tool = responses.request["tools"][0]
     assert tool["strict"] is True

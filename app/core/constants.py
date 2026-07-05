@@ -7,6 +7,7 @@ class MessageType(StrEnum):
 
 
 class CattleMemoryType(StrEnum):
+    MEDICAL = "medical"
     HEALTH = "health"
     FEEDING = "feeding"
     BREEDING = "breeding"
