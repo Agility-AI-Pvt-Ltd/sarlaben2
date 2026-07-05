@@ -1,16 +1,21 @@
+import asyncio
+import logging
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.chat_service import LLMChatService
-from app.ai.memory.extractor import MemoryExtractor
-from app.core.constants import CattleMemoryType, MessageType
+from app.core.constants import MessageType
 from app.core.exceptions import NotFoundError
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.memory_repository import MemoryRepository
 from app.repositories.session_repository import SessionRepository
 from app.schemas.chat import AIMessageCreate, CattleMemoryCreate, ChatMessageCreate
 from app.schemas.session import SessionCreate
+from app.services.cattle_context_tool import CattleContextTool
+
+
+logger = logging.getLogger(__name__)
 
 
 class ChatService:
@@ -18,8 +23,8 @@ class ChatService:
         self.chat_repo = ChatRepository(db)
         self.session_repo = SessionRepository(db)
         self.memory_repo = MemoryRepository(db)
+        self.cattle_context_tool = CattleContextTool(db)
         self.llm = LLMChatService()
-        self.memory_extractor = MemoryExtractor()
 
     async def add_human_message(
         self, cattle_id: UUID, farmer_id: UUID, data: ChatMessageCreate
@@ -34,16 +39,6 @@ class ChatService:
             message=data.message,
             message_type=MessageType.HUMAN.value,
         )
-        for memory in self.memory_extractor.extract(data.message):
-            await self.memory_repo.create(
-                cattle_id,
-                CattleMemoryCreate(
-                    cattle_data_text=memory.text,
-                    data_type_stored_by_ai=CattleMemoryType(memory.memory_type),
-                    source_message_id=message.id,
-                    confidence=memory.confidence,
-                ),
-            )
         return message
 
     async def add_ai_message(
@@ -52,38 +47,71 @@ class ChatService:
         session_id = await self._resolve_session_id(
             cattle_id, farmer_id, data.session_id
         )
-        messages = await self.chat_repo.list_recent_messages(session_id, limit=10)
-        memories = await self.memory_repo.list_for_cattle(cattle_id)
-        conversation_context = "\n".join(
-            f"{message.message_type}: {message.message}" for message in messages
-        )
-        latest_user_message = next(
-            (
-                message.message
-                for message in reversed(messages)
-                if message.message_type == MessageType.HUMAN.value
-            ),
-            data.context,
-        )
-        summarized_history = "\n".join(
-            (f"{memory.data_type_stored_by_ai}: {memory.cattle_data_text}")
-            for memory in reversed(memories)
-        )
-        text = await self.llm.generate_cattle_reply(
+        cattle_context = await self.cattle_context_tool.load(
             cattle_id=cattle_id,
             farmer_id=farmer_id,
-            conversation_context=conversation_context,
-            summarized_history=summarized_history,
+            session_id=session_id,
+        )
+        latest_human_message = cattle_context.latest_human_message
+        latest_user_message = (
+            latest_human_message.message if latest_human_message else data.context
+        )
+        cattle_profile = cattle_context.profile.to_prompt()
+
+        reply_task = self.llm.generate_cattle_reply(
+            cattle_id=cattle_id,
+            farmer_id=farmer_id,
+            cattle_profile=cattle_profile,
+            conversation_context=cattle_context.conversation_context,
+            summarized_history=cattle_context.summarized_history,
             additional_context=data.context,
             latest_user_message=latest_user_message,
         )
-        return await self.chat_repo.create_message(
+        memory_task = self.llm.extract_cattle_memories(
+            cattle_profile=cattle_profile,
+            conversation_context=cattle_context.conversation_context,
+            summarized_history=cattle_context.summarized_history,
+            latest_user_message=latest_user_message,
+            additional_context=data.context,
+        )
+        text_result, memory_result = await asyncio.gather(
+            reply_task, memory_task, return_exceptions=True
+        )
+        if isinstance(text_result, Exception):
+            raise text_result
+        if isinstance(memory_result, Exception):
+            logger.error(
+                "Cattle memory extraction failed",
+                exc_info=(
+                    type(memory_result),
+                    memory_result,
+                    memory_result.__traceback__,
+                ),
+            )
+            extracted_memories = []
+        else:
+            extracted_memories = memory_result
+
+        ai_message = await self.chat_repo.create_message(
             session_id=session_id,
             cattle_id=cattle_id,
             farmer_id=farmer_id,
-            message=text,
+            message=text_result,
             message_type=MessageType.AI.value,
         )
+        for memory in extracted_memories:
+            await self.memory_repo.create(
+                cattle_id,
+                CattleMemoryCreate(
+                    cattle_data_text=memory.cattle_data_text,
+                    data_type_stored_by_ai=memory.data_type_stored_by_ai,
+                    source_message_id=latest_human_message.id
+                    if latest_human_message
+                    else None,
+                    confidence=memory.confidence,
+                ),
+            )
+        return ai_message
 
     async def list_messages(self, session_id: UUID):
         return await self.chat_repo.list_messages(session_id)

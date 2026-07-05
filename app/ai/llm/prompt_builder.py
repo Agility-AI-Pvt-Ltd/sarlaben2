@@ -21,7 +21,10 @@ class PromptBuilder:
             "This is step 2: write the farmer-facing answer using the supplied step 1 analysis. "
             f"{self.build_language_instructions()} "
             "Answer clearly and concisely. "
-            "Use the supplied cattle history, but do not invent observations, diagnoses, or treatments. "
+            "Use the supplied cattle profile and history, but do not invent observations, "
+            "diagnoses, or treatments. "
+            "The cattle name and tag number are already known from the profile; never ask "
+            "the farmer to repeat them. "
             "Use the query intent to interpret short replies such as yes, no, or requests for more detail. "
             "If the cattle history is empty or contains no useful facts about the animal, ask up to three "
             "useful basic questions, such as age, sex, breed, pregnancy or lactation status, current "
@@ -40,11 +43,15 @@ class PromptBuilder:
         self,
         cattle_id: UUID,
         farmer_id: UUID,
+        cattle_profile: str,
         conversation_context: str,
         summarized_history: str = "",
         additional_context: str = "",
         query_analysis: QueryAnalysis | None = None,
     ) -> str:
+        profile = cattle_profile.strip() or (
+            f"Cattle ID: {cattle_id}\nFarmer ID: {farmer_id}"
+        )
         context = conversation_context.strip() or "No previous messages are available."
         history = (
             summarized_history.strip()
@@ -69,8 +76,7 @@ class PromptBuilder:
             or "No important missing information was identified."
         )
         return (
-            f"Cattle ID: {cattle_id}\n"
-            f"Farmer ID: {farmer_id}\n\n"
+            f"Cattle profile from database:\n{profile}\n\n"
             "Step 1 query analysis:\n"
             f"Intent: {analysis.intent.value}\n"
             f"Normalized request: {analysis.normalized_request}\n"
@@ -86,5 +92,40 @@ class PromptBuilder:
             f"Additional context:\n{extra}\n\n"
             "Write only the farmer-facing response. Follow the response action from "
             "step 1, while always applying the emergency safety instructions. "
+            "Use the database profile for the animal identity. "
             "The output must follow the Hindi language rule from the instructions."
+        )
+
+    def build_memory_extraction_instructions(self) -> str:
+        return (
+            "Extract durable cattle facts from the latest farmer message. "
+            "Store only information that could help future cattle care conversations. "
+            "Do not store greetings, questions, requests, acknowledgements, or facts already "
+            "present in the supplied profile/history unless the latest message updates them. "
+            "Classify each fact as medical, feeding, breeding, milk, medicine, or general. "
+            "Use medical for symptoms, illness, injury, veterinary observations, pregnancy/labor "
+            "risk, and health status. Use general for identity and stable background details. "
+            "Always call save_cattle_memories exactly once."
+        )
+
+    def build_memory_extraction_input(
+        self,
+        cattle_profile: str,
+        conversation_context: str,
+        summarized_history: str,
+        latest_user_message: str,
+        additional_context: str = "",
+    ) -> str:
+        context = conversation_context.strip() or "No previous messages are available."
+        history = (
+            summarized_history.strip()
+            or "No summarized history is available for this cattle."
+        )
+        extra = additional_context.strip() or "No additional context was supplied."
+        return (
+            f"Cattle profile from database:\n{cattle_profile}\n\n"
+            f"Recent conversation:\n{context}\n\n"
+            f"Stored cattle history:\n{history}\n\n"
+            f"Additional context:\n{extra}\n\n"
+            f"Latest farmer message:\n{latest_user_message}"
         )

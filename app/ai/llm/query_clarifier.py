@@ -120,6 +120,7 @@ class QueryAnalysisTool:
         client,
         model: str,
         latest_user_message: str,
+        cattle_profile: str,
         conversation_context: str,
         summarized_history: str,
         additional_context: str,
@@ -131,10 +132,13 @@ class QueryAnalysisTool:
                 "short replies from conversation context, inspect cattle history for "
                 "missing facts, and identify urgent symptoms. Use emergency_guidance "
                 "for severe injury, breathing difficulty, poisoning, inability to "
-                "stand, or prolonged labor. Always call analyze_cattle_query exactly "
-                "once with a concise response strategy, not hidden reasoning."
+                "stand, or prolonged labor. The cattle profile from the database "
+                "contains the animal name and tag number, so do not mark those as "
+                "missing. Always call analyze_cattle_query exactly once with a "
+                "concise response strategy, not hidden reasoning."
             ),
             input=(
+                f"Cattle profile from database:\n{cattle_profile}\n\n"
                 f"Recent conversation:\n{conversation_context}\n\n"
                 f"Cattle history:\n{summarized_history}\n\n"
                 f"Additional context:\n{additional_context}\n\n"
