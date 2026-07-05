@@ -5,6 +5,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.cattle import router as cattle_router
 from app.api.v1.calls import router as calls_router
 from app.api.v1.chat import router as chat_router
+from app.api.v1.notifications import router as notifications_router
 from app.api.v1.sessions import router as sessions_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import settings
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router, prefix=settings.api_v1_prefix)
     app.include_router(chat_router, prefix=settings.api_v1_prefix)
     app.include_router(calls_router, prefix=settings.api_v1_prefix)
+    app.include_router(notifications_router, prefix=settings.api_v1_prefix)
     app.include_router(websocket_router, prefix=settings.api_v1_prefix)
 
     @app.get("/health", tags=["health"])
