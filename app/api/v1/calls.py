@@ -18,3 +18,8 @@ async def create_call_log(payload: CallLogCreate, db: AsyncSession = Depends(get
 @router.get("/cattle/{cattle_id}", response_model=list[CallLogRead])
 async def list_cattle_call_logs(cattle_id: UUID, db: AsyncSession = Depends(get_db)):
     return await CallService(db).list_for_cattle(cattle_id)
+
+
+@router.get("/farmer/{farmer_id}", response_model=list[CallLogRead])
+async def list_farmer_call_logs(farmer_id: UUID, db: AsyncSession = Depends(get_db)):
+    return await CallService(db).list_for_farmer(farmer_id)

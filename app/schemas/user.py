@@ -60,6 +60,8 @@ class OTPRequest(BaseModel):
 class OTPRequestResponse(BaseModel):
     phone_number: str
     status: str
+    account_exists: bool
+    requires_name: bool
 
 
 class OTPVerifyRequest(UserCreate):

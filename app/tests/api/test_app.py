@@ -21,6 +21,7 @@ def test_openapi_contains_core_paths() -> None:
     assert "/api/v1/auth/otp/verify" in paths
     assert "/api/v1/auth/users/{user_id}" in paths
     assert "/api/v1/cattle" in paths
+    assert "/api/v1/calls/farmer/{farmer_id}" in paths
     assert "/api/v1/message/cattle/{cattle_id}/human/{human_id}" in paths
     assert "/api/v1/calls" in paths
 

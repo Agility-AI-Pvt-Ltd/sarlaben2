@@ -6,7 +6,36 @@ import pytest
 
 from app.core.exceptions import NotFoundError
 from app.schemas.user import OTPVerifyRequest, UserUpdate
+from app.schemas.user import OTPRequest
 from app.services.auth_service import AuthService
+
+
+@pytest.mark.asyncio
+async def test_send_otp_reports_existing_account() -> None:
+    service = object.__new__(AuthService)
+    service.verifier = SimpleNamespace(send_otp=AsyncMock(return_value="pending"))
+    service.user_repo = SimpleNamespace(get_by_phone=AsyncMock(return_value=object()))
+    payload = OTPRequest(phone_number="+919876543210")
+
+    status, account_exists = await service.send_otp(payload)
+
+    assert status == "pending"
+    assert account_exists is True
+    service.user_repo.get_by_phone.assert_awaited_once_with("+919876543210")
+    service.verifier.send_otp.assert_awaited_once_with("+919876543210")
+
+
+@pytest.mark.asyncio
+async def test_send_otp_reports_new_account() -> None:
+    service = object.__new__(AuthService)
+    service.verifier = SimpleNamespace(send_otp=AsyncMock(return_value="pending"))
+    service.user_repo = SimpleNamespace(get_by_phone=AsyncMock(return_value=None))
+    payload = OTPRequest(phone_number="+919876543210")
+
+    status, account_exists = await service.send_otp(payload)
+
+    assert status == "pending"
+    assert account_exists is False
 
 
 @pytest.mark.asyncio
@@ -33,6 +62,31 @@ async def test_verify_otp_creates_verified_user() -> None:
     assert created_data.phone_number == "+919876543210"
     assert created_data.full_name == "Ravi"
     assert created_data.preferred_language == "ta-IN"
+
+
+@pytest.mark.asyncio
+async def test_verify_otp_marks_existing_user_without_updating_name() -> None:
+    existing_user = object()
+    verified_user = object()
+    service = object.__new__(AuthService)
+    service.verifier = SimpleNamespace(verify_otp=AsyncMock(return_value=True))
+    service.user_repo = SimpleNamespace(
+        get_by_phone=AsyncMock(return_value=existing_user),
+        create_verified=AsyncMock(),
+        mark_verified=AsyncMock(return_value=verified_user),
+    )
+    payload = OTPVerifyRequest(
+        phone_number="+919876543210",
+        code="123456",
+        full_name="Should Not Replace Existing Name",
+        preferred_language="ta-IN",
+    )
+
+    result = await service.verify_otp(payload)
+
+    assert result is verified_user
+    service.user_repo.create_verified.assert_not_awaited()
+    service.user_repo.mark_verified.assert_awaited_once_with(existing_user)
 
 
 @pytest.mark.asyncio
