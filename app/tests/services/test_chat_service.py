@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from app.core.constants import CattleMemoryType
-from app.schemas.chat import AIMessageCreate
+from app.schemas.chat import AIMessageCreate, ImageMessageCreate
 from app.services.chat_service import ChatService
 
 
@@ -17,6 +17,39 @@ class FakeProfile:
 
     def to_prompt(self) -> str:
         return self.text
+
+
+@pytest.mark.asyncio
+async def test_add_image_message_creates_image_without_ai_reply() -> None:
+    cattle_id = uuid4()
+    farmer_id = uuid4()
+    session_id = uuid4()
+    image_data_url = "data:image/jpeg;base64,aGVsbG8gd29ybGQ="
+    created_message = object()
+
+    service = object.__new__(ChatService)
+    service._resolve_session_id = AsyncMock(return_value=session_id)
+    service.chat_repo = SimpleNamespace(
+        create_message=AsyncMock(return_value=created_message),
+    )
+
+    result = await service.add_image_message(
+        cattle_id,
+        farmer_id,
+        ImageMessageCreate(
+            session_id=session_id,
+            image_data_url=image_data_url,
+        ),
+    )
+
+    assert result is created_message
+    service.chat_repo.create_message.assert_awaited_once_with(
+        session_id=session_id,
+        cattle_id=cattle_id,
+        farmer_id=farmer_id,
+        message=image_data_url,
+        message_type="image",
+    )
 
 
 @pytest.mark.asyncio

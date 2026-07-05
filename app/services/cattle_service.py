@@ -41,6 +41,10 @@ class CattleService:
         cattle = await self.get_cattle(cattle_id)
         return await self.cattle_repo.update(cattle, data)
 
+    async def delete_cattle(self, cattle_id: UUID) -> None:
+        cattle = await self.get_cattle(cattle_id)
+        await self.cattle_repo.delete(cattle)
+
     async def add_memory(self, cattle_id: UUID, data: CattleMemoryCreate):
         await self.get_cattle(cattle_id)
         return await self.memory_repo.create(cattle_id, data)

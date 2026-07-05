@@ -10,7 +10,12 @@ from app.core.exceptions import NotFoundError
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.memory_repository import MemoryRepository
 from app.repositories.session_repository import SessionRepository
-from app.schemas.chat import AIMessageCreate, CattleMemoryCreate, ChatMessageCreate
+from app.schemas.chat import (
+    AIMessageCreate,
+    CattleMemoryCreate,
+    ChatMessageCreate,
+    ImageMessageCreate,
+)
 from app.schemas.session import SessionCreate
 from app.services.cattle_context_tool import CattleContextTool
 from app.services.notification_service import NotificationService
@@ -42,6 +47,20 @@ class ChatService:
             message_type=MessageType.HUMAN.value,
         )
         return message
+
+    async def add_image_message(
+        self, cattle_id: UUID, farmer_id: UUID, data: ImageMessageCreate
+    ):
+        session_id = await self._resolve_session_id(
+            cattle_id, farmer_id, data.session_id
+        )
+        return await self.chat_repo.create_message(
+            session_id=session_id,
+            cattle_id=cattle_id,
+            farmer_id=farmer_id,
+            message=data.image_data_url,
+            message_type=MessageType.IMAGE.value,
+        )
 
     async def add_ai_message(
         self, cattle_id: UUID, farmer_id: UUID, data: AIMessageCreate

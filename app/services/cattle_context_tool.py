@@ -64,7 +64,11 @@ class CattleChatContext:
     @property
     def conversation_context(self) -> str:
         return "\n".join(
-            f"{message.message_type}: {message.message}"
+            (
+                "human: [image attached]"
+                if message.message_type == "image"
+                else f"{message.message_type}: {message.message}"
+            )
             for message in self.recent_messages
         )
 
