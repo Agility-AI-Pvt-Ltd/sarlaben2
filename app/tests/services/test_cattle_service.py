@@ -1,0 +1,54 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
+import pytest
+
+from app.schemas.cattle import CattleCreate
+from app.services.cattle_service import CattleService
+
+
+@pytest.mark.asyncio
+async def test_create_cattle_generates_unique_tag_when_missing() -> None:
+    created_cattle = object()
+    service = object.__new__(CattleService)
+    service.cattle_repo = SimpleNamespace(
+        get_by_tag=AsyncMock(return_value=None),
+        create=AsyncMock(return_value=created_cattle),
+    )
+    payload = CattleCreate(farmer_id=uuid4(), name="Lakshmi")
+
+    result = await service.create_cattle(payload)
+
+    assert result is created_cattle
+    generated_tag = service.cattle_repo.create.await_args.args[0].cattle_tag
+    assert generated_tag.startswith("COW-")
+    assert len(generated_tag) == 36
+    service.cattle_repo.get_by_tag.assert_awaited_once_with(generated_tag)
+
+
+@pytest.mark.asyncio
+async def test_create_cattle_keeps_farmer_provided_id() -> None:
+    created_cattle = object()
+    service = object.__new__(CattleService)
+    service.cattle_repo = SimpleNamespace(
+        get_by_tag=AsyncMock(),
+        create=AsyncMock(return_value=created_cattle),
+    )
+    payload = CattleCreate(
+        farmer_id=uuid4(),
+        name="Lakshmi",
+        cattle_id="TN-1042",
+    )
+
+    result = await service.create_cattle(payload)
+
+    assert result is created_cattle
+    assert service.cattle_repo.create.await_args.args[0].cattle_tag == "TN-1042"
+    service.cattle_repo.get_by_tag.assert_not_awaited()
+
+
+def test_empty_cattle_id_is_treated_as_missing() -> None:
+    payload = CattleCreate(farmer_id=uuid4(), name="Lakshmi", cattle_id="  ")
+
+    assert payload.cattle_tag is None

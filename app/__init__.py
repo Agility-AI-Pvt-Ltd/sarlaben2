@@ -1,0 +1,1 @@
+"""Cow X backend application."""
