@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.user import OTPRequest, OTPVerifyRequest
+from app.schemas.user import OTPRequest, OTPVerifyRequest, UserUpdate
 
 
 def test_otp_request_requires_e164_phone_number() -> None:
@@ -23,3 +23,13 @@ def test_otp_code_requires_four_to_ten_digits() -> None:
 
     with pytest.raises(ValidationError):
         OTPVerifyRequest(phone_number="+919876543210", code="12ab")
+
+
+def test_user_update_cleans_profile_fields() -> None:
+    request = UserUpdate(
+        full_name="  Ravi Kumar  ",
+        profile_image_uri="  file:///tmp/profile.jpg  ",
+    )
+
+    assert request.full_name == "Ravi Kumar"
+    assert request.profile_image_uri == "file:///tmp/profile.jpg"

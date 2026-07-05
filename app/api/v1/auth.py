@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +9,8 @@ from app.schemas.user import (
     OTPRequestResponse,
     OTPVerifyRequest,
     OTPVerifyResponse,
+    UserRead,
+    UserUpdate,
 )
 from app.services.auth_service import AuthService
 
@@ -29,3 +33,12 @@ async def verify_otp(
 ) -> OTPVerifyResponse:
     user = await AuthService(db).verify_otp(payload)
     return OTPVerifyResponse(verified=True, user=user)
+
+
+@router.patch("/users/{user_id}", response_model=UserRead)
+async def update_user(
+    user_id: UUID,
+    payload: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> UserRead:
+    return await AuthService(db).update_user(user_id, payload)

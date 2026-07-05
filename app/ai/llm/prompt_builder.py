@@ -4,11 +4,23 @@ from app.ai.llm.query_clarifier import QueryAnalysis
 
 
 class PromptBuilder:
+    def build_language_instructions(self) -> str:
+        return (
+            "All farmer-facing communication must be in Hindi written in Devanagari. "
+            "Use English only for words that are commonly used in India in everyday "
+            "farm, phone, chat, audio, and medical conversations, such as AI, app, "
+            "phone, call, audio, chat, doctor, vet, medicine, injection, test, "
+            "report, temperature, symptoms, emergency, feed, and vaccination. "
+            "Do not write full English sentences. Do not use uncommon English words "
+            "when a simple Hindi word is available."
+        )
+
     def build_cattle_health_instructions(self) -> str:
         return (
             "You are Cow X, a practical cattle health assistant for farmers in India. "
             "This is step 2: write the farmer-facing answer using the supplied step 1 analysis. "
-            "Answer clearly and concisely using the farmer's language when it is apparent. "
+            f"{self.build_language_instructions()} "
+            "Answer clearly and concisely. "
             "Use the supplied cattle history, but do not invent observations, diagnoses, or treatments. "
             "Use the query intent to interpret short replies such as yes, no, or requests for more detail. "
             "If the cattle history is empty or contains no useful facts about the animal, ask up to three "
@@ -73,5 +85,6 @@ class PromptBuilder:
             f"Complete summarized cattle history:\n{history}\n\n"
             f"Additional context:\n{extra}\n\n"
             "Write only the farmer-facing response. Follow the response action from "
-            "step 1, while always applying the emergency safety instructions."
+            "step 1, while always applying the emergency safety instructions. "
+            "The output must follow the Hindi language rule from the instructions."
         )
