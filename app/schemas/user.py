@@ -33,6 +33,7 @@ class UserRead(Timestamped):
     id: UUID
     phone_number: str
     full_name: str | None
+    profile_image_uri: str | None
     preferred_language: str
     is_phone_verified: bool
     phone_verified_at: datetime | None
@@ -41,10 +42,11 @@ class UserRead(Timestamped):
 
 class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, max_length=120)
+    profile_image_uri: str | None = Field(default=None, max_length=2048)
 
-    @field_validator("full_name")
+    @field_validator("full_name", "profile_image_uri")
     @classmethod
-    def clean_full_name(cls, value: str | None) -> str | None:
+    def clean_optional_string(cls, value: str | None) -> str | None:
         if value is None:
             return None
         cleaned = value.strip()

@@ -45,7 +45,10 @@ async def test_update_user_updates_existing_user() -> None:
         get=AsyncMock(return_value=existing_user),
         update=AsyncMock(return_value=updated_user),
     )
-    payload = UserUpdate(full_name="  Ravi Kumar  ")
+    payload = UserUpdate(
+        full_name="  Ravi Kumar  ",
+        profile_image_uri="  file:///tmp/profile.jpg  ",
+    )
 
     result = await service.update_user(user_id, payload)
 
@@ -53,6 +56,7 @@ async def test_update_user_updates_existing_user() -> None:
     service.user_repo.get.assert_awaited_once_with(user_id)
     service.user_repo.update.assert_awaited_once_with(existing_user, payload)
     assert payload.full_name == "Ravi Kumar"
+    assert payload.profile_image_uri == "file:///tmp/profile.jpg"
 
 
 @pytest.mark.asyncio

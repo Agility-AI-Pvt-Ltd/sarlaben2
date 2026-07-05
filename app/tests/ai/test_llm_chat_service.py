@@ -91,6 +91,10 @@ async def test_generate_cattle_reply_uses_responses_api() -> None:
     assert (
         "contains no useful facts about the animal" in responses.request["instructions"]
     )
+    assert "Hindi written in Devanagari" in responses.request["instructions"]
+    assert "Do not write full English sentences" in responses.request["instructions"]
+    assert "AI, app, phone, call, audio, chat" in responses.request["instructions"]
+    assert "Hindi language rule" in responses.request["input"]
     assert events == ["analyze", "answer"]
     query_analyzer.analyze.assert_awaited_once_with(
         client=client,

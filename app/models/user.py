@@ -10,6 +10,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "farmers"
 
     full_name: Mapped[str | None] = mapped_column(String(120))
+    profile_image_uri: Mapped[str | None] = mapped_column(String(2048))
     phone_number: Mapped[str] = mapped_column(String(32), unique=True)
     preferred_language: Mapped[str] = mapped_column(String(16), default="en-IN")
     is_phone_verified: Mapped[bool] = mapped_column(Boolean, default=False)

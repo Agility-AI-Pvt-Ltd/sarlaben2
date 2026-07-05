@@ -44,6 +44,8 @@ class UserRepository:
     async def update(self, user: User, data: UserUpdate) -> User:
         if data.full_name is not None:
             user.full_name = data.full_name
+        if "profile_image_uri" in data.model_fields_set:
+            user.profile_image_uri = data.profile_image_uri
         await self.db.commit()
         await self.db.refresh(user)
         return user
