@@ -4,6 +4,7 @@ from enum import StrEnum
 class MessageType(StrEnum):
     HUMAN = "human"
     AI = "ai"
+    IMAGE = "image"
 
 
 class CattleMemoryType(StrEnum):
