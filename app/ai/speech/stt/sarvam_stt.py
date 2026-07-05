@@ -47,6 +47,7 @@ class SarvamSTT(BaseSTT):
     def _multipart_body(
         self, boundary: str, fields: dict[str, str], audio: bytes
     ) -> bytes:
+        filename, content_type = self._audio_metadata(audio)
         parts: list[bytes] = []
         for key, value in fields.items():
             parts.extend(
@@ -61,12 +62,31 @@ class SarvamSTT(BaseSTT):
                 f"--{boundary}\r\n".encode(),
                 (
                     'Content-Disposition: form-data; name="file"; '
-                    'filename="utterance.m4a"\r\n'
+                    f'filename="{filename}"\r\n'
                 ).encode(),
-                "Content-Type: audio/mp4\r\n\r\n".encode(),
+                f"Content-Type: {content_type}\r\n\r\n".encode(),
                 audio,
                 b"\r\n",
                 f"--{boundary}--\r\n".encode(),
             ]
         )
         return b"".join(parts)
+
+    @staticmethod
+    def _audio_metadata(audio: bytes) -> tuple[str, str]:
+        if audio.startswith(b"RIFF") and audio[8:12] == b"WAVE":
+            return "utterance.wav", "audio/wav"
+        if audio.startswith(b"\x1aE\xdf\xa3"):
+            return "utterance.webm", "audio/webm"
+        if audio.startswith(b"OggS"):
+            return "utterance.ogg", "audio/ogg"
+        if len(audio) >= 8 and audio[4:8] == b"ftyp":
+            return "utterance.m4a", "audio/mp4"
+        if len(audio) >= 2 and audio[0] == 0xFF and audio[1] & 0xF6 == 0xF0:
+            return "utterance.aac", "audio/aac"
+        if audio.startswith(b"ID3") or (
+            len(audio) >= 2 and audio[0] == 0xFF and audio[1] & 0xE0 == 0xE0
+        ):
+            return "utterance.mp3", "audio/mpeg"
+
+        return "utterance.m4a", "audio/mp4"
