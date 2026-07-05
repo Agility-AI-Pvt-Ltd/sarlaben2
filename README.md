@@ -64,8 +64,9 @@ Set `OPENAI_API_KEY` in `.env`, then start the API:
 python app.py
 ```
 
-The server defaults to `http://127.0.0.1:8001`. Override it with `HOST`
-or `PORT` environment variables when needed.
+The server defaults to `http://0.0.0.0:8000`. Override it with `HOST`
+or `PORT` environment variables when needed. For a loopback-only local
+server, run `HOST=127.0.0.1 python app.py`.
 
 For phone verification, also set `TWILIO_ACCOUNT_SID`,
 `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID`. Phone numbers must
@@ -83,3 +84,32 @@ To generate an AI reply, first store the farmer's message, then call
 ```
 
 The audio WebSocket assumes voice activity detection happens on the client. The client should send VAD lifecycle events as JSON and speech audio chunks as binary frames.
+
+Deploy on Render
+----------------
+
+This repo is configured for Render with Python `3.11.15`:
+
+- `.python-version` contains `3.11.15`.
+- `pyproject.toml` requires `==3.11.15`.
+- `render.yaml` sets `PYTHON_VERSION=3.11.15`.
+
+Use the included Render Blueprint (`render.yaml`) or create a Python Web
+Service manually with:
+
+```bash
+uv sync --frozen --no-dev
+```
+
+as the build command, and:
+
+```bash
+uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+as the start command.
+
+The Blueprint also provisions a Render Postgres database, injects
+`DATABASE_URL`, runs `uv run alembic upgrade head` before deploy, and uses
+`/health` for health checks. Set the prompted secret values in the Render
+dashboard, especially `OPENAI_API_KEY` and any Sarvam/Twilio values you need.
