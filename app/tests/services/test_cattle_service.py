@@ -49,6 +49,22 @@ async def test_create_cattle_keeps_farmer_provided_id() -> None:
     service.cattle_repo.get_by_tag.assert_not_awaited()
 
 
+@pytest.mark.asyncio
+async def test_delete_cattle_deletes_existing_cattle() -> None:
+    cattle_id = uuid4()
+    cattle = object()
+    service = object.__new__(CattleService)
+    service.cattle_repo = SimpleNamespace(
+        get=AsyncMock(return_value=cattle),
+        delete=AsyncMock(),
+    )
+
+    await service.delete_cattle(cattle_id)
+
+    service.cattle_repo.get.assert_awaited_once_with(cattle_id)
+    service.cattle_repo.delete.assert_awaited_once_with(cattle)
+
+
 def test_empty_cattle_id_is_treated_as_missing() -> None:
     payload = CattleCreate(farmer_id=uuid4(), name="Lakshmi", cattle_id="  ")
 

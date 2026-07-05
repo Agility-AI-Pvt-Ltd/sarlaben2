@@ -40,3 +40,7 @@ class CattleRepository:
         await self.db.commit()
         await self.db.refresh(cattle)
         return cattle
+
+    async def delete(self, cattle: Cattle) -> None:
+        await self.db.delete(cattle)
+        await self.db.commit()

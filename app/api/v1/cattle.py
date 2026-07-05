@@ -35,6 +35,11 @@ async def update_cattle(
     return await CattleService(db).update_cattle(cattle_id, payload)
 
 
+@router.delete("/{cattle_id}", status_code=204)
+async def delete_cattle(cattle_id: UUID, db: AsyncSession = Depends(get_db)):
+    await CattleService(db).delete_cattle(cattle_id)
+
+
 @router.post("/{cattle_id}/memories", response_model=CattleMemoryRead, status_code=201)
 async def add_cattle_memory(
     cattle_id: UUID, payload: CattleMemoryCreate, db: AsyncSession = Depends(get_db)
