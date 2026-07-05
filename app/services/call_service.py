@@ -15,3 +15,6 @@ class CallService:
 
     async def list_for_cattle(self, cattle_id: UUID):
         return await self.repo.list_for_cattle(cattle_id)
+
+    async def list_for_farmer(self, farmer_id: UUID):
+        return await self.repo.list_for_farmer(farmer_id)

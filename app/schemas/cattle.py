@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.common import Timestamped
 
@@ -29,7 +29,8 @@ class CattleCreate(BaseModel):
 
 
 class CattleUpdate(BaseModel):
-    cattle_tag: str | None = Field(default=None, min_length=1, max_length=64)
+    model_config = ConfigDict(extra="forbid")
+
     name: str | None = Field(default=None, min_length=1, max_length=120)
     breed: str | None = None
     sex: str | None = None

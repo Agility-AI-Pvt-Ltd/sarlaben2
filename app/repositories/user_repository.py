@@ -31,10 +31,7 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
-    async def mark_verified(self, user: User, data: UserCreate) -> User:
-        if data.full_name is not None:
-            user.full_name = data.full_name
-        user.preferred_language = data.preferred_language
+    async def mark_verified(self, user: User) -> User:
         user.is_phone_verified = True
         user.phone_verified_at = utc_now()
         await self.db.commit()

@@ -22,8 +22,13 @@ async def send_otp(
     payload: OTPRequest,
     db: AsyncSession = Depends(get_db),
 ) -> OTPRequestResponse:
-    status = await AuthService(db).send_otp(payload)
-    return OTPRequestResponse(phone_number=payload.phone_number, status=status)
+    status, account_exists = await AuthService(db).send_otp(payload)
+    return OTPRequestResponse(
+        account_exists=account_exists,
+        phone_number=payload.phone_number,
+        requires_name=not account_exists,
+        status=status,
+    )
 
 
 @router.post("/otp/verify", response_model=OTPVerifyResponse)

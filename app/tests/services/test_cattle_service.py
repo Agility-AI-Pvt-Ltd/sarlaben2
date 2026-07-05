@@ -3,8 +3,9 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
-from app.schemas.cattle import CattleCreate
+from app.schemas.cattle import CattleCreate, CattleUpdate
 from app.services.cattle_service import CattleService
 
 
@@ -52,3 +53,8 @@ def test_empty_cattle_id_is_treated_as_missing() -> None:
     payload = CattleCreate(farmer_id=uuid4(), name="Lakshmi", cattle_id="  ")
 
     assert payload.cattle_tag is None
+
+
+def test_cattle_update_rejects_cattle_tag() -> None:
+    with pytest.raises(ValidationError):
+        CattleUpdate(cattle_tag="TN-999")

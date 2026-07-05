@@ -26,3 +26,12 @@ class CallRepository:
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_for_farmer(self, farmer_id: UUID) -> list[CallLog]:
+        stmt = (
+            select(CallLog)
+            .where(CallLog.farmer_id == farmer_id)
+            .order_by(CallLog.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
