@@ -54,11 +54,6 @@ class ChatMessageRead(Timestamped):
     message_type: MessageType
 
 
-class ClearChatResponse(BaseModel):
-    archived_messages: int
-    purge_after: datetime | None
-
-
 class CattleMemoryCreate(BaseModel):
     cattle_data_text: str = Field(min_length=1)
     data_type_stored_by_ai: CattleMemoryType = CattleMemoryType.GENERAL

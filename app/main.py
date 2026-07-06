@@ -1,6 +1,3 @@
-import asyncio
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,18 +11,6 @@ from app.api.v1.websocket import router as websocket_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
-from app.services.deleted_chat_cleanup import run_deleted_chat_cleanup
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    stop_event = asyncio.Event()
-    cleanup_task = asyncio.create_task(run_deleted_chat_cleanup(stop_event))
-    try:
-        yield
-    finally:
-        stop_event.set()
-        await cleanup_task
 
 
 def create_app() -> FastAPI:
@@ -35,7 +20,6 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         docs_url="/docs",
-        lifespan=lifespan,
         redoc_url="/redoc",
     )
     app.add_middleware(

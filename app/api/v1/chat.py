@@ -8,7 +8,6 @@ from app.schemas.chat import (
     AIMessageCreate,
     ChatMessageCreate,
     ChatMessageRead,
-    ClearChatResponse,
     ImageMessageCreate,
 )
 from app.services.chat_service import ChatService
@@ -61,15 +60,3 @@ async def create_ai_message(
 @router.get("/sessions/{session_id}", response_model=list[ChatMessageRead])
 async def list_session_messages(session_id: UUID, db: AsyncSession = Depends(get_db)):
     return await ChatService(db).list_messages(session_id)
-
-
-@router.delete(
-    "/sessions/{session_id}/human/{human_id}",
-    response_model=ClearChatResponse,
-)
-async def clear_session_messages(
-    session_id: UUID,
-    human_id: UUID,
-    db: AsyncSession = Depends(get_db),
-):
-    return await ChatService(db).clear_chat(session_id, human_id)
