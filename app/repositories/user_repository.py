@@ -43,6 +43,8 @@ class UserRepository:
             user.full_name = data.full_name
         if "profile_image_uri" in data.model_fields_set:
             user.profile_image_uri = data.profile_image_uri
+        if data.preferred_language is not None:
+            user.preferred_language = data.preferred_language
         await self.db.commit()
         await self.db.refresh(user)
         return user

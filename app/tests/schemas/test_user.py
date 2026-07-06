@@ -33,3 +33,11 @@ def test_user_update_cleans_profile_fields() -> None:
 
     assert request.full_name == "Ravi Kumar"
     assert request.profile_image_uri == "file:///tmp/profile.jpg"
+
+
+def test_user_update_accepts_only_supported_languages() -> None:
+    assert UserUpdate(preferred_language="en-IN").preferred_language == "en-IN"
+    assert UserUpdate(preferred_language="hi-IN").preferred_language == "hi-IN"
+
+    with pytest.raises(ValidationError):
+        UserUpdate(preferred_language="ta-IN")
