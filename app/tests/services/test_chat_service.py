@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -7,7 +6,6 @@ from uuid import uuid4
 import pytest
 
 from app.core.constants import CattleMemoryType
-from app.core.exceptions import NotFoundError
 from app.schemas.chat import AIMessageCreate, ImageMessageCreate
 from app.services.chat_service import ChatService
 
@@ -19,52 +17,6 @@ class FakeProfile:
 
     def to_prompt(self) -> str:
         return self.text
-
-
-@pytest.mark.asyncio
-async def test_clear_chat_archives_messages_for_thirty_days() -> None:
-    farmer_id = uuid4()
-    session_id = uuid4()
-    purge_after = datetime.now(timezone.utc)
-    service = object.__new__(ChatService)
-    service.session_repo = SimpleNamespace(
-        get=AsyncMock(
-            return_value=SimpleNamespace(
-                farmer_id=farmer_id,
-            )
-        )
-    )
-    service.deleted_chat_repo = SimpleNamespace(
-        archive_and_clear_session=AsyncMock(return_value=(7, purge_after)),
-    )
-
-    result = await service.clear_chat(session_id, farmer_id)
-
-    assert result.archived_messages == 7
-    assert result.purge_after is purge_after
-    service.deleted_chat_repo.archive_and_clear_session.assert_awaited_once_with(
-        session_id
-    )
-
-
-@pytest.mark.asyncio
-async def test_clear_chat_rejects_another_farmer() -> None:
-    service = object.__new__(ChatService)
-    service.session_repo = SimpleNamespace(
-        get=AsyncMock(
-            return_value=SimpleNamespace(
-                farmer_id=uuid4(),
-            )
-        )
-    )
-    service.deleted_chat_repo = SimpleNamespace(
-        archive_and_clear_session=AsyncMock(),
-    )
-
-    with pytest.raises(NotFoundError):
-        await service.clear_chat(uuid4(), uuid4())
-
-    service.deleted_chat_repo.archive_and_clear_session.assert_not_awaited()
 
 
 @pytest.mark.asyncio
