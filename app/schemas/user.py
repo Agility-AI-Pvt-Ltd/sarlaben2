@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
@@ -43,6 +43,7 @@ class UserRead(Timestamped):
 class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, max_length=120)
     profile_image_uri: str | None = Field(default=None, max_length=2048)
+    preferred_language: Literal["en-IN", "hi-IN"] | None = None
 
     @field_validator("full_name", "profile_image_uri")
     @classmethod

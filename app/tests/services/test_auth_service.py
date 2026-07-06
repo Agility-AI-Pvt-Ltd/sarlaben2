@@ -102,6 +102,7 @@ async def test_update_user_updates_existing_user() -> None:
     payload = UserUpdate(
         full_name="  Ravi Kumar  ",
         profile_image_uri="  file:///tmp/profile.jpg  ",
+        preferred_language="hi-IN",
     )
 
     result = await service.update_user(user_id, payload)
@@ -111,6 +112,7 @@ async def test_update_user_updates_existing_user() -> None:
     service.user_repo.update.assert_awaited_once_with(existing_user, payload)
     assert payload.full_name == "Ravi Kumar"
     assert payload.profile_image_uri == "file:///tmp/profile.jpg"
+    assert payload.preferred_language == "hi-IN"
 
 
 @pytest.mark.asyncio
