@@ -8,12 +8,14 @@ from app.ai.llm.chat_service import LLMChatService
 from app.core.constants import MessageType
 from app.core.exceptions import NotFoundError
 from app.repositories.chat_repository import ChatRepository
+from app.repositories.deleted_chat_repository import DeletedChatRepository
 from app.repositories.memory_repository import MemoryRepository
 from app.repositories.session_repository import SessionRepository
 from app.schemas.chat import (
     AIMessageCreate,
     CattleMemoryCreate,
     ChatMessageCreate,
+    ClearChatResponse,
     ImageMessageCreate,
 )
 from app.schemas.session import SessionCreate
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 class ChatService:
     def __init__(self, db: AsyncSession) -> None:
         self.chat_repo = ChatRepository(db)
+        self.deleted_chat_repo = DeletedChatRepository(db)
         self.session_repo = SessionRepository(db)
         self.memory_repo = MemoryRepository(db)
         self.cattle_context_tool = CattleContextTool(db)
@@ -145,6 +148,19 @@ class ChatService:
 
     async def list_messages(self, session_id: UUID):
         return await self.chat_repo.list_messages(session_id)
+
+    async def clear_chat(self, session_id: UUID, farmer_id: UUID) -> ClearChatResponse:
+        session = await self.session_repo.get(session_id)
+        if not session or session.farmer_id != farmer_id:
+            raise NotFoundError("Session not found")
+
+        archived_messages, purge_after = (
+            await self.deleted_chat_repo.archive_and_clear_session(session_id)
+        )
+        return ClearChatResponse(
+            archived_messages=archived_messages,
+            purge_after=purge_after,
+        )
 
     async def _resolve_session_id(
         self, cattle_id: UUID, farmer_id: UUID, session_id: UUID | None
