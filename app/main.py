@@ -13,6 +13,7 @@ from app.api.v1.sessions import router as sessions_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
+from app.core.firebase import initialize_firebase_admin
 from app.core.logging import configure_logging
 from app.services.deleted_chat_cleanup import run_deleted_chat_cleanup
 
@@ -30,6 +31,7 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     configure_logging()
+    initialize_firebase_admin()
 
     app = FastAPI(
         title=settings.app_name,

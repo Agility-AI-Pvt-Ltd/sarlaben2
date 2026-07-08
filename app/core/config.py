@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     twilio_verify_service_sid: str | None = Field(
         default=None, validation_alias="TWILIO_VERIFY_SERVICE_SID"
     )
+    firebase_service_account_path: str | None = Field(
+        default=None, validation_alias="FIREBASE_SERVICE_ACCOUNT_PATH"
+    )
 
     llm_provider: str = "openai"
     stt_provider: str = "sarvam"

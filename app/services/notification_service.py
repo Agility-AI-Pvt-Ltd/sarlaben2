@@ -48,6 +48,7 @@ class NotificationService:
                 "sound": "default",
                 "title": f"CowX AI: {cattle_name}",
                 "body": preview,
+                "priority": "high",
                 "data": {
                     "type": "message",
                     "cattleId": str(cattle_id),
