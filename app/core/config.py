@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     firebase_service_account_json: str | None = Field(
         default=None, validation_alias="FIREBASE_SERVICE_ACCOUNT_JSON"
     )
+    notification_test_key: str | None = Field(
+        default=None, validation_alias="NOTIFICATION_TEST_KEY"
+    )
 
     llm_provider: str = "openai"
     stt_provider: str = "sarvam"

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import firebase_admin
 import httpx
@@ -113,6 +113,51 @@ class NotificationService:
             )
             response.raise_for_status()
 
+    async def send_test_notification(
+        self,
+        *,
+        title: str,
+        body: str,
+        farmer_id: UUID | None = None,
+        token: str | None = None,
+        use_latest: bool = True,
+        cattle_id: UUID | None = None,
+        cattle_name: str = "Test cow",
+    ) -> str:
+        cattle_id = cattle_id or uuid4()
+
+        if token:
+            await self._send_token_notification(
+                token=token,
+                title=title,
+                body=body,
+                cattle_id=cattle_id,
+            )
+            return "raw-token"
+
+        if farmer_id:
+            await self.send_message_notification(
+                farmer_id=farmer_id,
+                cattle_id=cattle_id,
+                cattle_name=cattle_name,
+                message=body,
+            )
+            return f"farmer:{farmer_id}"
+
+        if use_latest:
+            latest = await self.push_tokens.latest()
+            if not latest:
+                raise NotFoundError("No push tokens found")
+            await self._send_token_notification(
+                token=latest.expo_push_token,
+                title=title,
+                body=body,
+                cattle_id=cattle_id,
+            )
+            return "latest-token"
+
+        raise NotFoundError("No notification target provided")
+
     async def _send_fcm_notifications(
         self, messages: list[messaging.Message]
     ) -> None:
@@ -129,3 +174,50 @@ class NotificationService:
                     "success_count": response.success_count,
                 },
             )
+
+    async def _send_token_notification(
+        self,
+        *,
+        token: str,
+        title: str,
+        body: str,
+        cattle_id: UUID,
+    ) -> None:
+        data = {
+            "type": "message",
+            "cattleId": str(cattle_id),
+            "url": f"/chat/{cattle_id}",
+        }
+
+        if is_expo_push_token(token):
+            await self._send_expo_notifications(
+                [
+                    {
+                        "to": token,
+                        "sound": "default",
+                        "title": title,
+                        "body": body,
+                        "priority": "high",
+                        "data": data,
+                        "channelId": "cowx-messages",
+                    }
+                ]
+            )
+            return
+
+        await self._send_fcm_notifications(
+            [
+                messaging.Message(
+                    token=token,
+                    notification=messaging.Notification(title=title, body=body),
+                    data=data,
+                    android=messaging.AndroidConfig(
+                        priority="high",
+                        notification=messaging.AndroidNotification(
+                            channel_id="cowx-messages",
+                            sound="default",
+                        ),
+                    ),
+                )
+            ]
+        )

@@ -42,3 +42,8 @@ class PushTokenRepository:
         stmt = select(PushToken).where(PushToken.farmer_id == farmer_id)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def latest(self) -> PushToken | None:
+        stmt = select(PushToken).order_by(PushToken.last_seen_at.desc()).limit(1)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()

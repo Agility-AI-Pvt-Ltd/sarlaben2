@@ -26,3 +26,21 @@ class PushTokenRead(Timestamped):
     expo_push_token: str
     platform: str | None
     device_id: str | None
+
+
+class TestNotificationRequest(BaseModel):
+    farmer_id: UUID | None = None
+    token: str | None = Field(default=None, min_length=20, max_length=4096)
+    use_latest: bool = True
+    title: str = Field(default="CowX test notification", max_length=120)
+    body: str = Field(
+        default="If you see this, push delivery works.",
+        max_length=500,
+    )
+    cattle_id: UUID | None = None
+    cattle_name: str = Field(default="Test cow", max_length=120)
+
+
+class TestNotificationResponse(BaseModel):
+    sent: bool
+    target: str
