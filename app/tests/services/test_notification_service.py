@@ -177,3 +177,44 @@ async def test_send_message_notification_sends_fcm_payload(
     assert message.android.priority == "high"
     assert message.android.notification.channel_id == "cowx-messages"
     assert message.android.notification.sound == "default"
+
+
+@pytest.mark.asyncio
+async def test_send_test_notification_can_broadcast_to_all_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sent_expo_payloads = []
+    sent_fcm_batches = []
+
+    async def fake_send_expo(payloads):
+        sent_expo_payloads.extend(payloads)
+
+    async def fake_send_fcm(messages):
+        sent_fcm_batches.append(messages)
+
+    service = object.__new__(NotificationService)
+    service.push_tokens = SimpleNamespace(
+        list_all=AsyncMock(
+            return_value=[
+                SimpleNamespace(expo_push_token="ExpoPushToken[abc12345678901234567890]"),
+                SimpleNamespace(
+                    expo_push_token="fcm_token_abcdefghijklmnopqrstuvwxyz1234567890"
+                ),
+            ]
+        )
+    )
+    monkeypatch.setattr(service, "_send_expo_notifications", fake_send_expo)
+    monkeypatch.setattr(service, "_send_fcm_notifications", fake_send_fcm)
+
+    target = await service.send_test_notification(
+        send_to_all=True,
+        title="CowX broadcast",
+        body="Testing all saved devices.",
+    )
+
+    assert target == "all-tokens:2"
+    service.push_tokens.list_all.assert_awaited_once_with()
+    assert sent_expo_payloads[0]["title"] == "CowX broadcast"
+    assert sent_expo_payloads[0]["body"] == "Testing all saved devices."
+    assert sent_fcm_batches[0][0].notification.title == "CowX broadcast"
+    assert sent_fcm_batches[0][0].notification.body == "Testing all saved devices."

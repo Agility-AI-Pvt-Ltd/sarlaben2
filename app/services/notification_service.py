@@ -120,6 +120,7 @@ class NotificationService:
         body: str,
         farmer_id: UUID | None = None,
         token: str | None = None,
+        send_to_all: bool = False,
         use_latest: bool = True,
         cattle_id: UUID | None = None,
         cattle_name: str = "Test cow",
@@ -134,6 +135,18 @@ class NotificationService:
                 cattle_id=cattle_id,
             )
             return "raw-token"
+
+        if send_to_all:
+            tokens = await self.push_tokens.list_all()
+            if not tokens:
+                raise NotFoundError("No push tokens found")
+            await self._send_tokens_notification(
+                tokens=[item.expo_push_token for item in tokens],
+                title=title,
+                body=body,
+                cattle_id=cattle_id,
+            )
+            return f"all-tokens:{len(tokens)}"
 
         if farmer_id:
             await self.send_message_notification(
@@ -183,15 +196,32 @@ class NotificationService:
         body: str,
         cattle_id: UUID,
     ) -> None:
+        await self._send_tokens_notification(
+            tokens=[token],
+            title=title,
+            body=body,
+            cattle_id=cattle_id,
+        )
+
+    async def _send_tokens_notification(
+        self,
+        *,
+        tokens: list[str],
+        title: str,
+        body: str,
+        cattle_id: UUID,
+    ) -> None:
         data = {
             "type": "message",
             "cattleId": str(cattle_id),
             "url": f"/chat/{cattle_id}",
         }
+        expo_payloads = []
+        fcm_messages = []
 
-        if is_expo_push_token(token):
-            await self._send_expo_notifications(
-                [
+        for token in tokens:
+            if is_expo_push_token(token):
+                expo_payloads.append(
                     {
                         "to": token,
                         "sound": "default",
@@ -201,23 +231,25 @@ class NotificationService:
                         "data": data,
                         "channelId": "cowx-messages",
                     }
-                ]
-            )
-            return
-
-        await self._send_fcm_notifications(
-            [
-                messaging.Message(
-                    token=token,
-                    notification=messaging.Notification(title=title, body=body),
-                    data=data,
-                    android=messaging.AndroidConfig(
-                        priority="high",
-                        notification=messaging.AndroidNotification(
-                            channel_id="cowx-messages",
-                            sound="default",
-                        ),
-                    ),
                 )
-            ]
-        )
+            else:
+                fcm_messages.append(
+                    messaging.Message(
+                        token=token,
+                        notification=messaging.Notification(title=title, body=body),
+                        data=data,
+                        android=messaging.AndroidConfig(
+                            priority="high",
+                            notification=messaging.AndroidNotification(
+                                channel_id="cowx-messages",
+                                sound="default",
+                            ),
+                        ),
+                    )
+                )
+
+        if expo_payloads:
+            await self._send_expo_notifications(expo_payloads)
+
+        if fcm_messages:
+            await self._send_fcm_notifications(fcm_messages)

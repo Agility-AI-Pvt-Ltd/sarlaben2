@@ -47,3 +47,8 @@ class PushTokenRepository:
         stmt = select(PushToken).order_by(PushToken.last_seen_at.desc()).limit(1)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_all(self) -> list[PushToken]:
+        stmt = select(PushToken)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

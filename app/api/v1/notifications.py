@@ -38,6 +38,7 @@ async def send_test_notification(
     target = await NotificationService(db).send_test_notification(
         farmer_id=payload.farmer_id,
         token=payload.token,
+        send_to_all=payload.send_to_all,
         use_latest=payload.use_latest,
         title=payload.title,
         body=payload.body,

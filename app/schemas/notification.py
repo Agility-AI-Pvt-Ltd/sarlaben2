@@ -31,6 +31,7 @@ class PushTokenRead(Timestamped):
 class TestNotificationRequest(BaseModel):
     farmer_id: UUID | None = None
     token: str | None = Field(default=None, min_length=20, max_length=4096)
+    send_to_all: bool = False
     use_latest: bool = True
     title: str = Field(default="CowX test notification", max_length=120)
     body: str = Field(
