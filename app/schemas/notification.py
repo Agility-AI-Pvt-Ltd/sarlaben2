@@ -13,13 +13,10 @@ class PushTokenCreate(BaseModel):
 
     @field_validator("expo_push_token")
     @classmethod
-    def validate_expo_push_token(cls, value: str) -> str:
+    def validate_push_token(cls, value: str) -> str:
         token = value.strip()
-        if not (
-            token.startswith("ExpoPushToken[")
-            or token.startswith("ExponentPushToken[")
-        ):
-            raise ValueError("Invalid Expo push token")
+        if not token:
+            raise ValueError("Invalid push token")
         return token
 
 

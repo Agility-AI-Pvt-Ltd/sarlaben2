@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -14,8 +15,15 @@ def initialize_firebase_admin() -> None:
     if firebase_admin._apps:
         return
 
-    if not settings.firebase_service_account_path:
+    if not settings.firebase_service_account_path and not settings.firebase_service_account_json:
         logger.info("Firebase Admin SDK is not configured")
+        return
+
+    if settings.firebase_service_account_json:
+        service_account = json.loads(settings.firebase_service_account_json)
+        cred = credentials.Certificate(service_account)
+        firebase_admin.initialize_app(cred)
+        logger.info("Firebase Admin SDK initialized")
         return
 
     credential_path = Path(settings.firebase_service_account_path).expanduser()

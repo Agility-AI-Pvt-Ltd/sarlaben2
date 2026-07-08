@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     firebase_service_account_path: str | None = Field(
         default=None, validation_alias="FIREBASE_SERVICE_ACCOUNT_PATH"
     )
+    firebase_service_account_json: str | None = Field(
+        default=None, validation_alias="FIREBASE_SERVICE_ACCOUNT_JSON"
+    )
 
     llm_provider: str = "openai"
     stt_provider: str = "sarvam"
