@@ -16,7 +16,7 @@ class PushToken(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("farmers.id", ondelete="CASCADE"),
         index=True,
     )
-    expo_push_token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    expo_push_token: Mapped[str] = mapped_column(String(4096), unique=True, index=True)
     platform: Mapped[str | None] = mapped_column(String(24))
     device_id: Mapped[str | None] = mapped_column(String(128))
     last_seen_at: Mapped[datetime] = mapped_column(
