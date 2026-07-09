@@ -51,6 +51,20 @@ class ChatService:
         )
         return message
 
+    async def add_human_message_with_ai_reply(
+        self, cattle_id: UUID, farmer_id: UUID, data: ChatMessageCreate
+    ):
+        human_message = await self.add_human_message(cattle_id, farmer_id, data)
+        ai_message = await self.add_ai_message(
+            cattle_id,
+            farmer_id,
+            AIMessageCreate(session_id=human_message.session_id),
+        )
+        return {
+            "human_message": human_message,
+            "ai_message": ai_message,
+        }
+
     async def add_image_message(
         self, cattle_id: UUID, farmer_id: UUID, data: ImageMessageCreate
     ):

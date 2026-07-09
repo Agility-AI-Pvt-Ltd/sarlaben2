@@ -8,7 +8,7 @@ import pytest
 
 from app.core.constants import CattleMemoryType
 from app.core.exceptions import NotFoundError
-from app.schemas.chat import AIMessageCreate, ImageMessageCreate
+from app.schemas.chat import AIMessageCreate, ChatMessageCreate, ImageMessageCreate
 from app.services.chat_service import ChatService
 
 
@@ -98,6 +98,36 @@ async def test_add_image_message_creates_image_without_ai_reply() -> None:
         message=image_data_url,
         message_type="image",
     )
+
+
+@pytest.mark.asyncio
+async def test_add_human_message_with_ai_reply_uses_saved_session() -> None:
+    cattle_id = uuid4()
+    farmer_id = uuid4()
+    session_id = uuid4()
+    human_message = SimpleNamespace(session_id=session_id)
+    ai_message = object()
+
+    service = object.__new__(ChatService)
+    service.add_human_message = AsyncMock(return_value=human_message)
+    service.add_ai_message = AsyncMock(return_value=ai_message)
+
+    payload = ChatMessageCreate(message="hii")
+    result = await service.add_human_message_with_ai_reply(
+        cattle_id,
+        farmer_id,
+        payload,
+    )
+
+    assert result == {
+        "human_message": human_message,
+        "ai_message": ai_message,
+    }
+    service.add_human_message.assert_awaited_once_with(cattle_id, farmer_id, payload)
+    service.add_ai_message.assert_awaited_once()
+    ai_payload = service.add_ai_message.await_args.args[2]
+    assert service.add_ai_message.await_args.args[:2] == (cattle_id, farmer_id)
+    assert ai_payload == AIMessageCreate(session_id=session_id)
 
 
 @pytest.mark.asyncio

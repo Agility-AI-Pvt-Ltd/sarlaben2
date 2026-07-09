@@ -54,6 +54,11 @@ class ChatMessageRead(Timestamped):
     message_type: MessageType
 
 
+class HumanAIMessageRead(BaseModel):
+    human_message: ChatMessageRead
+    ai_message: ChatMessageRead
+
+
 class ClearChatResponse(BaseModel):
     archived_messages: int
     purge_after: datetime | None

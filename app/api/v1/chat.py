@@ -9,6 +9,7 @@ from app.schemas.chat import (
     ChatMessageCreate,
     ChatMessageRead,
     ClearChatResponse,
+    HumanAIMessageRead,
     ImageMessageCreate,
 )
 from app.services.chat_service import ChatService
@@ -28,6 +29,22 @@ async def create_human_message(
     db: AsyncSession = Depends(get_db),
 ):
     return await ChatService(db).add_human_message(cattle_id, human_id, payload)
+
+
+@router.post(
+    "/cattle/{cattle_id}/human/{human_id}/with-ai-reply",
+    response_model=HumanAIMessageRead,
+    status_code=201,
+)
+async def create_human_message_with_ai_reply(
+    cattle_id: UUID,
+    human_id: UUID,
+    payload: ChatMessageCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    return await ChatService(db).add_human_message_with_ai_reply(
+        cattle_id, human_id, payload
+    )
 
 
 @router.post(
